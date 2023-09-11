@@ -1,5 +1,3 @@
-/* /root/mulval/kb/interaction_rules.P */
-
 /* Listing 1: Network components. */
 located(Principal, Zone).
 located(Host,Zone,Type).
@@ -249,7 +247,6 @@ isAuthenticated(Principal,AttackerHost,AP):-
     located(AttackerHost,WirelessRange,physical).
 
 
-/************************* FROM HERE MISSING IN RULESET.P ********************************/
 /* Listing 16: WPA2 key reinstallation attack. */
 accessLinkFlow(Principal, Host, AP, Protocol, read):-
     malicious(Principal),
@@ -260,12 +257,12 @@ accessLinkFlow(Principal, Host, AP, Protocol, read):-
     vulLinkProtocol(WirelessRange, VulID, Protocol, adjacent, keyReinstallation),
     isAP(AP, WirelessRange, DstZone, Protocol, secured),
     located(Host, WirelessRange, physical).
-crackAPEncKey3(Principal, Host, AP):-
-    malicious1(Principal),
-    accessLinkFlow5(Principal, Host, AP, Protocol, read),
-    isAP5(AP, WirelessRange, DstZone, Protocol, secured),
-    vulLinkProtocol5(WirelessRange, VulID1, Protocol, adjacent, keyReinstallation),
-    vulHost5(Host, VulID2, wpaSupplicant, localExploit, keyExtraction).
+crackAPEncKey(Principal, Host, AP):-
+    malicious(Principal),
+    accessLinkFlow(Principal, Host, AP, Protocol, read),
+    isAP(AP, WirelessRange, DstZone, Protocol, secured),
+    vulLinkProtocol(WirelessRange, VulID1, Protocol, adjacent, keyReinstallation),
+    vulHost(Host, VulID2, wpaSupplicant, localExploit, keyExtraction).
 
 
 /* Listing 17: PIN cracking attack. */

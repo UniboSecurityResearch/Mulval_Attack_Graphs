@@ -107,6 +107,11 @@ derived(crackAPEncKey(Principal,AP)).
 derived(isAuthenticated(Principal,AttackerHost,AP)).
 derived(accessDataFlow(Principal,FlowName,read)).
 derived(located(Dev,DstZone,Type)).
+derived(accessLinkFlow(Principal, Host, AP, Protocol, read)).
+derived(crackAPEncKey(Principal, Host, AP)).
+derived(accessDataFlow(Principal, FlowName, read)).
+derived(crackPINCode(Principal,SrcHost,DstHost)).
+derived(spoofLinkHost(Principal,ImpersonatedHost,FooledHost,AttackerHost,deception)).
 
 
 meta(attackGoal(_)).
@@ -144,7 +149,11 @@ meta(advances(_, _)).
 :- table isAuthenticated/3.
 :- table accessDataFlow/3.
 :- table located/3.
-
+:- table accessLinkFlow/5.
+:- table crackAPEncKey/3.
+:- table accessDataFlow/3.
+:- table crackPINCode/3.
+:- table spoofLinkHost/5.
 
 /******************************************************/
 /****         Interaction Rules                   *****/
@@ -632,7 +641,7 @@ interaction_rule(
     localAccess(Principal, NameResolver, admin),
     netAccess(Principal2, FooledHost, AttackerHost, Prot, Port),
     localAccess(Principal, AttackerHost, User)),
-  rule_desc('DNS spoofing binding the attacker\'s host\'s IP address to the queried naming',
+  rule_desc('DNS spoofing binding the IP address of the host of the attacker to the queried naming',
   1.0)).
 
 interaction_rule(
@@ -701,7 +710,7 @@ interaction_rule(
     relay(AP,FlowName),
     isAP(AP,WirelessRange,DstZone,Prot,secured),
     vulLinkProtocol(WirelessRange,weakEncryption,Prot,remoteExploit,keyExtraction)),
-  rule_desc('Crack WEP\'s encryption',
+  rule_desc('Crack encryption of WEP access point',
   1.0)).
 
 interaction_rule(
@@ -740,4 +749,67 @@ interaction_rule(
     isAP(AP,WirelessRange,DstZone,Prot,secured),
     located(_,DstZone,Type)),
   rule_desc('New located interaction rule',
+  1.0)).
+
+interaction_rule(
+  (accessLinkFlow(Principal, Host, AP, Protocol, read):-
+    malicious(Principal),
+    localAccess(Principal, AttackerHost, admin),
+    located(AttackerHost, WirelessRange, physical),
+    flowBind(Flowname, Protocol, Port),
+    isCredential(Flowname, DstZone, User),
+    vulLinkProtocol(WirelessRange, VulID, Protocol, adjacent, keyReinstallation),
+    isAP(AP, WirelessRange, DstZone, Protocol, secured),
+    located(Host, WirelessRange, physical)),
+  rule_desc('The attacker becomes a MITM between the host and the access point',
+  1.0)).
+
+interaction_rule(
+  (crackAPEncKey(Principal, Host, AP):-
+    malicious(Principal),
+    accessLinkFlow(Principal, Host, AP, Protocol, read),
+    isAP(AP, WirelessRange, DstZone, Protocol, secured),
+    vulLinkProtocol(WirelessRange, VulID1, Protocol, adjacent, keyReinstallation),
+    vulHost(Host, VulID2, wpaSupplicant, localExploit, keyExtraction)),
+  rule_desc('The attacker prevents the 4th handshake message from reaching the access point, which causes the retransmission of the 3rd message',
+  1.0)).
+
+
+interaction_rule(
+  (crackPINCode(Principal,SrcHost,DstHost):-
+    malicious(Principal),
+    accessDataFlow(Principal,FlowName,read),
+    dataFlow(SrcHost,DstHost,FlowName,Direction),
+    flowBind(FlowName,bluetooth,_),
+    isPairingProcess(FlowName)),
+  rule_desc('Cracking the shared secret of two devices establishing a Bluetooth communication',
+  1.0)).
+
+interaction_rule(
+  (accessDataFlow(Principal,FlowName,read):-
+    crackPINCode(Principal,SrcHost,DstHost),
+    dataFlow(SrcHost,DstHost,FlowName,Direction),
+    flowBind(FlowName,bluetooth,_),
+    located(AttackerHost,BluetoothRange,physical),
+    localAccess(Principal,AttackerHost,admin)),
+  rule_desc('The attacker acquires the capability to decipher the communication between SrcHost and DstHost',
+  1.0)).
+
+
+interaction_rule(
+  (spoofLinkHost(Principal,ImpersonatedHost,FooledHost,AttackerHost,deception):-
+    vulLinkProtocol(ImpersonatedHost,FooledHost,VulID,Prot,adjacent,impersonateSrc),
+    l2Connection(AttackerHost,FooledHost,BusID,Prot,bus),
+    localAccess(Principal,AttackerHost,User),
+    isMaster(ImpersonatedHost,BusID)),
+  rule_desc('A compromised device connected to the bus masquerades as the master and sends fake data and commands',
+  1.0)).
+
+interaction_rule(
+  (spoofLinkHost(Principal,ImpersonatedHost,FooledHost,AttackerHost,deception):-
+    vulLinkProtocol(ImpersonatedHost,FooledHost,VulID,Prot,adjacent,impersonatedSrc),
+    l2Connection(AttackerHost,FooledHost,BusID,Prot,bus),
+    localAccess(Principal,AttackerHost,User),
+    isSlave(ImpersonatedHost,BusID)),
+  rule_desc('A compromised device connected to the bus masquerades as a slave and sends false data',
   1.0)).
