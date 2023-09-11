@@ -17,6 +17,25 @@ To produce the attack graph run the following command:
 graph_gen.sh input.P -v --rulefile ./rules.P
 ```
 
+## Dockerfile.
+A Dockerfile is provided to build a container that automatically executes `graph_gen` using as input file `./input/input.P` and as rules file `./ruleset/ruleset.P`.
+To build use:
+```
+docker build -t mulval .
+```
+
+To run the container type:
+```
+docker run -it --rm mulval
+```
+
+At the end, before stopping the container, remember to copy the generated attack graph using:
+```
+docker cp CONTAINERID:/input/AttackGraph.txt ./
+docker cp CONTAINERID:/input/AttackGraph.csv ./
+docker cp CONTAINERID:/input/AttackGraph.pdf ./
+```
+
 ## Creating customized rule set (From Mulval documentation).
 
 To develop your own interaction rules, you can create new rule files, e.g. "my_interaction_rules.P", and use the `-r` or `-a` options to load your rule files. The default rule files can be found under the kb/ folder in this package.
