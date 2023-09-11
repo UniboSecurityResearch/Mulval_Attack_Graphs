@@ -29,7 +29,9 @@ Once you have developed your own rule set, you can test it by using the `-r RULE
 ## Useful Links.
 1. [Mulval github][2]
 2. [Reference Paper for the extended ruleset][3]
+3. [Reference Paper Transaction][4]
 
 [1]: https://hub.docker.com/r/wilbercui/mulval
 [2]: https://github.com/risksense/mulval/tree/master
 [3]: https://arxiv.org/pdf/1906.09786.pdf
+[4]: https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9277665
