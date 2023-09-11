@@ -1,0 +1,16 @@
+attackerLocated('Windows Server').
+malicious(attacker).
+attackGoal(dos(attacker, 'Historian')).
+
+netAccess(attacker, 'Windows Server', 'Historian', tcp, 22).
+aclNW('Windows Server', 'Historian', tcp, 22).
+aclNW('Windows Server', 'OT Network', tcp, 22).
+located('Historian', 'OT Network', ipSubnet).
+aclH('Windows Server', admin, 'Windows Server', 'Historian', tcp, 22).
+localAccess(attacker, 'Windows Server', admin).
+
+vulHost('Historian', synFlood, ssh, remoteExploit, dos).
+dependsOn('Historian', ssh, tcp).
+vulHost('Historian', synFlood, tcp, remoteExploit, dos).
+aclH('Historian', _, 'Windows Server', 'Historian', tcp, 22).
+networkService('Historian', ssh, tcp, 22, _).

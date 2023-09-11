@@ -1,0 +1,301 @@
+/* /root/mulval/kb/interaction_rules.P */
+
+/* Listing 1: Network components. */
+located(Principal, Zone).
+located(Host,Zone,Type).
+existingProtocol(Zone,Protocol).
+relay(RelayHost,SrcHost,DstHost).
+relay(RelayHost,SrcHost,DstHost,Prot,Port).
+relay(RelayHost,DataFlow).
+isGateway(Router,Subnet).
+isAP(AP,WirelessRange,DstZone,Prot,SecurityConf).
+isNameResolver(ResolverHost,UserHost,Searched).
+isMaster(Device,BusID).
+isSlave(Device,BusID).
+
+
+/* Listing 2: Network connectivity. */
+l2Connection(Dev1,Dev2,LinkId,Prot,Type).
+l2Connection(Dev1,Dev2,Link,Prot,ipSubnet):-
+    located(Dev1,LinkId,ipSubnet),
+    located(Dev2,LinkId,ipSubnet),
+    existingProtocol(LinkId,Prot).
+l2Connection(Dev1,Dev2,Prot,bus):-
+    located(Dev1,BusID,bus),
+    located(Dev2,BusID,bus),
+    existingProtocol(BusID,Prot).
+l2Connection(Dev,AP,WirelessRange,Prot,wireless):-
+    isAP(AP,WirelessRange,DstZone,Prot,open),
+    located(Dev,WirelessRange,physical).
+l2Connection(Dev,AP,WirelessRange,Prot,wireless):-
+    isAP(AP,WirelessRange,DstZone,Prot,secured),
+    located(Dev,WirelessRange,physical),
+    isAuthenticated(Principal,Dev,AP).
+located(Dev,DstZone,Type):-
+    l2Connection(Dev,AP,WirelessRange,Prot,wireless),
+    isAP(AP,WirelessRange,DstZone,Prot,secured),
+    located(_,DstZone,Type).
+l2Connection(MasterDevice,SlaveDevice,BluetoothRange,bluetooth,wireless):-
+    existingProtocol(BluetoothRange,bluetooth),
+    inDiscoveryMode(SlaveDevice),
+    located(MasterDevice,BluetoothRange,physical),
+    located(SlaveDevice,BluetoothRange,physical).
+
+
+/* Listing 3: Network communication. */
+dataFlow(SrcHost,DstHost,FlowName,Direction).
+dataFlow(Host,FlowName).
+flowBind(FlowName,Prot,Port).
+isPairingProcess(FlowName).
+
+aclNW(SrcHostOrsubnet,DstHostOrsubnet,Prot,Port).
+
+
+/* Listing 4: Principal host access */
+localAccess(Principal,Host,User).
+localAccess(attacker,Host,admin):-
+    attackerLocated(Host).
+localAccess(Principal,HostB, User):-
+    hasAccount(Principal,HostB,User),
+    networkService(HostB,Prog,Prot,Port,LoginServiceUser),
+    netAccess(Principal,HostA,HostB,Prot,Port),
+    aclH(HostB,LoginServiceUser,HostA,HostB,Prot,Port),
+    isLoginService(Prog).
+
+
+/* Listing 5: Principal network access. */
+l2Access(Principal,SrcHost,DstHost,Prot,LinkID,Type).
+l2Access(Principal,SrcHost,DstHost,Prot,LinkID,Type):-
+    localAccess(Principal,SrcHost,User),
+    l2Connection(SrcHost,DstHost,LinkID,Prot,Type).
+
+netAccess(Principal,SrcHost,DstHost,Prot,Port).
+netAccess(Principal,SrcHost,DstHost,Prot,Port):-
+    localAccess(Principal,SrcHost,SrcUser),
+    aclNW(SrcHost,DstHost,Prot,Port),
+    aclH(SrcHost,SrcUser,SrcHost,DstHost,Prot,Port).
+
+
+/* Listing 6: Principal data access. */
+accessFile(Principal,Host,AccessPerm,Path).
+
+accessDataFlow(Principal,FlowName,AccessPerm).
+accessDataFlow(Principal,FlowName,view):-
+    l2Connection(HostA,HostB,WirelessRange,Prot,wireless),
+    located(SideHost,WirelessRange,physical),
+    localAccess(Principal,SideHost,admin),
+    dataFlow(HostA,HostB,FlowName,Direction).
+accessDataFlow(Principal,FlowName,view):-
+    l2Connection(HostA,RelayHost,WirelessRange,Prot,wireless),
+    located(SideHost,WirelessRange,physical),
+    localAccess(Principal,SideHost,admin),
+    dataFlow(HostA,FlowName),
+    relay(RelayHost,FlowName).
+
+accessLinkFlow(Principal, SrcHost, DstHost, Prot, AccessPerm).
+accessE2EFlow(Principal, SrcHost, DstHost, Prot, Port, AccessPerm).
+
+
+/* Listing 7: Host configuration. */
+isCredential(DataName,Host,User).
+isNameResolverRecord(DataName).
+dataBind(DataName,Host,Path).
+
+networkService(Host,Prog,Prot,Port,User).
+isLoginService(Prog).
+localService(Host,Prog,User).
+dependsOn(Host,Prog,Library).
+bugHype(Host,Prog,Range,Consequence).
+
+aclH(Host,User,SrcHostOrSubnet,DstHostOrSubnet,Prot,Port).
+
+
+/* Listing 8: Host vulnerability. */
+vulHost(Host,VulID,Prog,Range,Consequence).
+vulHost(Host,VulID,Prog,Range,Consequence):-
+    bugHype(Host,Prog,Range,Consequence).
+vulHost(Host,VulID,Prog,Range,Consequence):-
+    vulHost(Host,VulID,Library,Range,Consequence),
+    dependsOn(Host,Prog,Library).
+
+
+/* Listing 9: Network vulnerability. */
+vulLinkProtocol(LinkID,VulID,Protocol,Range,Consequence).
+vulLinkProtocol(SrcHost,DstHost,VulID,Protocol,Range,Consequence).
+vulLinkProtocol(SrcHost,DstHost,VulID,Protocol,Range,Consequence):-
+    vulLinkProtocol(LinkID,VulID,Protocol,Range,Consequence),
+    located(SrcHost,LinkID,Type),
+    located(DstHost,LinkID,Type).
+
+vulE2EProtocol(Host,VulID,Protocol,Port,Range,Consequence).
+vulE2EProtocol(SrcHost,DstHost,VulID,Protocol,Port,Range,Consequence).
+
+
+/* Listing 10: Data vulnerability. */
+vulData(Data,VulID,Consequence).
+vulBind(Host,VulID,Path).
+
+vulFlow(FlowName,VulID,Consequence).
+vulFlow(FlowName,unencrypted,Consequence):-
+    dataflow(SrcHost,DstHost,FlowName),
+    flowBind(FlowName,E2EProtocol,E2EPort),
+    vulE2EProtocol(SrcHost,DstHost,VulID1,E2EProtocol,E2EPort,E2ERange,eavesdropping),
+    vulLinkProtocol(SrcHost,DstHost,VulID2,LinkProtocol,LinkRange,eavesdropping),
+    vulData(FlowName,unencrypted,Consequence).
+vulFlow(FlowName,unencrypted,Consequence):-
+    vulE2EProtocol(SrcHost,DstHost,VulID1,E2EProtocol,E2EPort,relayingHost,eavesdropping),
+    vulLinkProtocol(SrcHost,RelayHost,VulID2,LinkProtocol,LinkRange,eavesdropping),
+    relay(RelayHost,FlowName),
+    vulData(FlowName,unencrypted,Consequence),
+    dataflow(SrcHost,DstHost,FlowName),
+    flowBind(FlowName,E2EProtocol,E2EPort).
+vulFlow(FlowName,unencrypted,Consequence):-
+    vulLinkProtocol(SrcHost,DstHost,VulID,Protocol,Range,eavesdropping),
+    vulData(FlowName,unencrypted,Consequence),
+    dataflow(SrcHost,DstHost,FlowName),
+    flowBind(FlowName,Protocol,_).
+vulFlow(FlowName,unsigned,dataFalsification):-
+    vulE2EProtocol(SrcHost,DstHost,VulID,Protocol,Port,reayingHost,dataFalsification),
+    vulData(FlowName,unsigned,dataFalsification),
+    dataflow(SrcHost,DstHost,FlowName),
+    flowBind(FlowName,Protocol,Port).
+
+
+/* Listing 11: ARP spoofing. */
+spoofLinkHost(Principal,ImpersonatedHost,FooledHost,SpoofingHost,Consequence).
+
+spoofLinkHost(Principal,ImpersonatedHost,FooledHost,AttackerHost, trafficTheft):-
+    vulLinkProtocol(FooledHost,ImpersonatedHost,VulID,Prot,adjacent,impersonateDst),
+    l2Access(Principal,AttackerHost,ImpersonatedHost,Prot,Zone,ipSubnet).
+spoofLinkHost(Principal,ImpersonatedHost,FooledHost,AttackerHost,trafficTheft):-
+    vulLinkProtocol(RelayHost,ImpersonatedHost,VulID,Prot,adjacent,impersonateDst),
+    l2Access(Principal,AttackerHost,ImpersonatedHost,Prot,Subnet,ipSubnet),
+    dataFlow(FooledHost,ImpersonatedHost,FlowName),
+    isGateway(RelayHost,Subnet).
+
+
+/* Listing 12: DNS spoofing. */
+spoofE2EHost(Principal,ImpersonatedHost,FooledHost,SpoofingHost,Prot,Port,Consequence).
+
+spoofE2EHost(Principal, ImpersonatedHost, FooledHost, AttackerHost, Prot, Port, trafficTheft):-
+    isNameResolver(NameResolver, FooledHost, ImpersonatedHost),
+    vulE2EProtocol(FooledHost, NameResolver, dnsCachePoisoning, dns, DNSPort, remoteExploit, dataFalsification),
+    netAccess(Principal, AttackerHost, NameResolver, dns, DNSPort).
+spoofE2EHost(Principal, ImpersonatedHost, FooledHost, AttackerHost, Prot, Port, trafficTheft):-
+    isNameResolver(NameResolver, FooledHost, ImpersonatedHost),
+    localAccess(Principal, NameResolver, admin),
+    netAccess(Principal2, FooledHost, AttackerHost, Prot, Port),
+    localAccess(Principal, AttackerHost, User).
+spoofE2EHost(Principal, ImpersonatedHost, FooledHost, AttackerHost, Prot, Port, trafficTheft):-
+    isNameResolver(NameResolver, FooledHost, ImpersonatedHost),
+    accessFile(Principal, NameResolver, write, RecoredPath),
+    dataBind(NameResolverRecord, NameResolver, RecoredPath),
+    isNameResolverRecord(NameResolverRecord).
+
+
+/* Listing 13: DoS attacks. */
+dos(Principal,Host).
+
+dos(Principal,Host):-
+    localAccess(Principal,Host,User),
+    localService(Host,Prog,User),
+    vulHost(Host,VulID,Prog,localExploit,dos),
+    malicious(Principal).
+dos(Principal,DstHost):-
+    networkService(DstHost,Prog,Prot,Port,NetworkServiceUser),
+    aclH(DstHost,NetworkServiceUser,SrcHost,DstHost,Prot,Port),
+    vulHost(DstHost,VulID,Prog,remoteExploit,dos),
+    netAccess(Principal,SrcHost,DstHost,Prot,Port),
+    malicious(Principal).
+
+
+/* Listing 14: MiTM attacks. */
+mitmLink(Principal,SrcHost,DstHost,SpoofingHost):-
+    spoofLinkHost(Principal,SrcHost,DstHost,SpoofingHost,trafficTheft),
+    spoofLinkHost(Principal,DstHost,SrcHost,SpoofingHost,trafficTheft).
+relay(MITMHost,FlowName):-
+    mitmLink(Principal,SrcHost,DstHost,MITMHost),
+    dataFlow(SrcHost,DstHost,FlowName,Direction).
+
+mitmE2E(Principal,SrcHost,DstHost,SpoofingHost,Prot,Port):-
+    spoofE2EHost(Principal,SrcHost,DstHost,SpoofingHost,Prot,Port,trafficTheft),
+    spoofE2EHost(Principal,DstHost,SrcHost,SpoofingHost,Prot,Port,trafficTheft).
+relay(MITMHost,SrcHost,DstHost,Prot,Port):-
+    mitmE2E(Principal,SrcHost,DstHost,MITMHost,Prot,Port).
+
+
+/* Listing 15: WEP cracking attack. */
+crackAPEncKey(Principal,AP):-
+    malicious(Principal),
+    accessDataFlow(Principal,FlowName,view),
+    relay(AP,FlowName),
+    isAP(AP,WirelessRange,DstZone,Prot,secured),
+    vulLinkProtocol(WirelessRange,weakEncryption,Prot,remoteExploit,keyExtraction).
+
+accessDataFlow(Principal,FlowName,read):-
+    crackAPEncKey(Principal,AP),
+    relay(AP,FlowName),
+    dataFlow(Host,FlowName),
+    flowBind(FlowName,Prot,Port),
+    vulE2EProtocol(Host,VulID,Prot,Port,remoteExploit,eavesdropping),
+    isAP(AP,WirelessRange,DstZone,WirelessProt,secured),
+    located(AttackerHost,WirelessRange,physical),
+    localAccess(Principal,AttackerHost,admin).
+
+isAuthenticated(Principal,AttackerHost,AP):-
+    crackAPEncKey(Principal,AP),
+    isAP(AP,WirelessRange,DstZone,Prot,secured),
+    localAccess(Principal,AttackerHost,admin),
+    located(AttackerHost,WirelessRange,physical).
+
+
+/************************* FROM HERE MISSING IN RULESET.P ********************************/
+/* Listing 16: WPA2 key reinstallation attack. */
+accessLinkFlow(Principal, Host, AP, Protocol, read):-
+    malicious(Principal),
+    localAccess(Principal, AttackerHost, admin),
+    located(AttackerHost, WirelessRange, physical),
+    flowBind(Flowname, Protocol, Port),
+    isCredential(Flowname, DstZone, User),
+    vulLinkProtocol(WirelessRange, VulID, Protocol, adjacent, keyReinstallation),
+    isAP(AP, WirelessRange, DstZone, Protocol, secured),
+    located(Host, WirelessRange, physical).
+crackAPEncKey3(Principal, Host, AP):-
+    malicious1(Principal),
+    accessLinkFlow5(Principal, Host, AP, Protocol, read),
+    isAP5(AP, WirelessRange, DstZone, Protocol, secured),
+    vulLinkProtocol5(WirelessRange, VulID1, Protocol, adjacent, keyReinstallation),
+    vulHost5(Host, VulID2, wpaSupplicant, localExploit, keyExtraction).
+
+
+/* Listing 17: PIN cracking attack. */
+crackPINCode(Principal,SrcHost,DstHost):-
+    malicious(Principal),
+    accessDataFlow(Principal,FlowName,read),
+    dataFlow(SrcHost,DstHost,FlowName,Direction),
+    flowBind(FlowName,bluetooth,_),
+    isPairingProcess(FlowName).
+
+accessDataFlow(Principal,FlowName,read):-
+    crackPINCode(Principal,SrcHost,DstHost),
+    dataFlow(SrcHost,DstHost,FlowName,Direction),
+    flowBind(FlowName,bluetooth,_),
+    located(AttackerHost,BluetoothRange,physical),
+    localAccess(Principal,AttackerHost,admin).
+
+
+/* Listing 18: Attacks on serial bus. */
+dos(Principal,DstHost):-
+    malicious(Principal),
+    l2Access(Principal,SrcHost,DstHost,Port,BusID,bus).
+
+spoofLinkHost(Principal,ImpersonatedHost,FooledHost,AttackerHost,deception):-
+    vulLinkProtocol(ImpersonatedHost,FooledHost,VulID,Prot,adjacent,impersonateSrc),
+    l2Connection(AttackerHost,FooledHost,BusID,Prot,bus),
+    localAccess(Principal,AttackerHost,User),
+    isMaster(ImpersonatedHost,BusID).
+spoofLinkHost(Principal,ImpersonatedHost,FooledHost,AttackerHost,deception):-
+    vulLinkProtocol(ImpersonatedHost,FooledHost,VulID,Prot,adjacent,impersonatedSrc),
+    l2Connection(AttackerHost,FooledHost,BusID,Prot,bus),
+    localAccess(Principal,AttackerHost,User),
+    isSlave(ImpersonatedHost,BusID).

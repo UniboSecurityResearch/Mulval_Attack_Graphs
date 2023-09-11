@@ -1,0 +1,52 @@
+attackerLocated(internet).
+malicious(attacker).
+attackGoal(dos(attacker,_)).
+
+isGateway(switchP4,subnetP4).
+isGateway(ovs1,subnet1).
+isGateway(ovs2,subnet2).
+
+located(ovs1, subnetP4, ipSubnet).
+located(ovs2, subnetP4, ipSubnet).
+
+located(host1, subnet1, ipSubnet).
+located(host2, subnet1, ipSubnet).
+located(host3, subnet1, ipSubnet).
+located(host4, subnet1, ipSubnet).
+located(host5, subnet1, ipSubnet).
+located(host6, subnet1, ipSubnet).
+
+located(host7, subnet2, ipSubnet).
+located(host8, subnet2, ipSubnet).
+located(host9, subnet2, ipSubnet).
+located(host10, subnet2, ipSubnet).
+located(host11, subnet2, ipSubnet).
+located(host12, subnet2, ipSubnet).
+
+hacl(internet, host1, tcp, 80).
+hacl(internet, host2, tcp, 80).
+hacl(internet, host3, tcp, 80).
+hacl(internet, host4, tcp, 80).
+hacl(internet, host5, tcp, 80).
+hacl(internet, host6, tcp, 80).
+hacl(internet, host7, tcp, 80).
+hacl(internet, host8, tcp, 80).
+hacl(internet, host9, tcp, 80).
+hacl(internet, host10, tcp, 80).
+hacl(internet, host11, tcp, 80).
+hacl(internet, host12, tcp, 80).
+
+
+/* vulnerability information */
+vulHost(host1, synFlood, tcp, localExploit, dos).
+vulHost(host2, synFlood, tcp, localExploit, dos).
+vulHost(host3, synFlood, tcp, localExploit, dos).
+vulHost(host4, synFlood, tcp, localExploit, dos).
+vulHost(host5, synFlood, tcp, localExploit, dos).
+vulHost(host6, synFlood, tcp, localExploit, dos).
+vulHost(host7, synFlood, tcp, localExploit, dos).
+vulHost(host8, synFlood, tcp, localExploit, dos).
+vulHost(host9, synFlood, tcp, localExploit, dos).
+vulHost(host10, synFlood, tcp, localExploit, dos).
+vulHost(host11, synFlood, tcp, localExploit, dos).
+vulHost(host12, synFlood, tcp, localExploit, dos).
