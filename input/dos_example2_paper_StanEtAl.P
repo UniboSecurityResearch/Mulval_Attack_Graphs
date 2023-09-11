@@ -1,0 +1,20 @@
+attackerLocated('HMI').
+malicious(attacker).
+attackGoal(dos(attacker, 'Generator4')).
+
+l2Access(attacker, 'PLC2', 'Generator4', modbus, 'Serial Bus', bus).
+localAccess(attacker, 'PLC2', admin).
+isLoginService(ssh).
+aclH('PLC2', admin, 'HMI', 'PLC2', tcp, 22).
+netAccess(attacker, 'HMI', 'PLC2', tcp, 22).
+aclNW('HMI', 'PLC2', tcp, 22).
+located('PLC2', 'OT Network', ipSubnet).
+located('HMI', 'OT Network', ipSubnet).
+aclH('HMI', admin, 'HMI', 'PLC2', tcp, 22).
+localAccess(attacker, 'HMI', admin).
+networkService('PLC2', ssh, tcp, 22, admin).
+hasAccount(attacker, 'PLC2', admin).
+l2Connection('PLC2', 'Generator4', 'Serial Bus', modbus, bus).
+existingProtocol('Serial Bus', modbus).
+located('Generator4', 'Serial Bus', bus).
+located('PLC2', 'Serial Bus', bus).
