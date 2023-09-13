@@ -1,7 +1,8 @@
+/* attacker info */
 attackerLocated(internet).
 malicious(attacker).
-attackGoal(dos(attacker,_)).
 
+/* network topology */
 isGateway(switchP4,subnetP4).
 isGateway(ovs1,subnet1).
 isGateway(ovs2,subnet2).
@@ -15,7 +16,6 @@ located(host3, subnet1, ipSubnet).
 located(host4, subnet1, ipSubnet).
 located(host5, subnet1, ipSubnet).
 located(host6, subnet1, ipSubnet).
-
 located(host7, subnet2, ipSubnet).
 located(host8, subnet2, ipSubnet).
 located(host9, subnet2, ipSubnet).
@@ -36,17 +36,45 @@ hacl(internet, host10, tcp, 80).
 hacl(internet, host11, tcp, 80).
 hacl(internet, host12, tcp, 80).
 
+/* active services */
+networkService(host1, ssh, tcp, 80, _).
+networkService(host2, ssh, tcp, 80, _).
+networkService(host3, ssh, tcp, 80, _).
+networkService(host4, ssh, tcp, 80, _).
+networkService(host5, ssh, tcp, 80, _).
+networkService(host6, ssh, tcp, 80, _).
+networkService(host7, ssh, tcp, 80, _).
+networkService(host8, ssh, tcp, 80, _).
+networkService(host9, ssh, tcp, 80, _).
+networkService(host10, ssh, tcp, 80, _).
+networkService(host11, ssh, tcp, 80, _).
+networkService(host12, ssh, tcp, 80, _).
+
+aclH(host1, _, _, host1, tcp, 80).
+aclH(host2, _, _, host2, tcp, 80).
+aclH(host3, _, _, host3, tcp, 80).
+aclH(host4, _, _, host4, tcp, 80).
+aclH(host5, _, _, host5, tcp, 80).
+aclH(host6, _, _, host6, tcp, 80).
+aclH(host7, _, _, host7, tcp, 80).
+aclH(host8, _, _, host8, tcp, 80).
+aclH(host9, _, _, host9, tcp, 80).
+aclH(host10, _, _, host10, tcp, 80).
+aclH(host11, _, _, host11, tcp, 80).
+aclH(host12, _, _, host12, tcp, 80).
 
 /* vulnerability information */
-vulHost(host1, synFlood, tcp, localExploit, dos).
-vulHost(host2, synFlood, tcp, localExploit, dos).
-vulHost(host3, synFlood, tcp, localExploit, dos).
-vulHost(host4, synFlood, tcp, localExploit, dos).
-vulHost(host5, synFlood, tcp, localExploit, dos).
-vulHost(host6, synFlood, tcp, localExploit, dos).
-vulHost(host7, synFlood, tcp, localExploit, dos).
-vulHost(host8, synFlood, tcp, localExploit, dos).
-vulHost(host9, synFlood, tcp, localExploit, dos).
-vulHost(host10, synFlood, tcp, localExploit, dos).
-vulHost(host11, synFlood, tcp, localExploit, dos).
-vulHost(host12, synFlood, tcp, localExploit, dos).
+vulHostDos(host1).
+vulHostDos(host2).
+vulHostDos(host3).
+vulHostDos(host4).
+vulHostDos(host5).
+vulHostDos(host6).
+vulHostDos(host7).
+vulHostDos(host8).
+vulHostDos(host9).
+vulHostDos(host10).
+vulHostDos(host11).
+vulHostDos(host12).
+
+attackGoal(dos(attacker,_)).

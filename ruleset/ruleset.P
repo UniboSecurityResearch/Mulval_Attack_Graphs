@@ -75,7 +75,18 @@ primitive(vulData(Data,VulID,Consequence)).
 primitive(vulBind(Host,VulID,Path)).
 primitive(inDiscoveryMode(Host)).
 primitive(malicious(Principal)).
-
+primitive(vulHostDos(Host)).
+primitive(vulHost(Host,VulID,Prog,Range,Consequence)).
+primitive(l2Connection(Dev1,Dev2,LinkId,Prot,Type)).
+primitive(localAccess(Principal,Host,User)).
+primitive(l2Access(Principal,SrcHost,DstHost,Prot,LinkID,Type)).
+primitive(netAccess(Principal,SrcHost,DstHost,Prot,Port)).
+primivite(accessDataFlow(Principal,FlowName,AccessPerm)).
+primitive(vulLinkProtocol(LinkID,VulID,Protocol,Range,Consequence)).
+primitive(vulFlow(FlowName,VulID,Consequence)).
+primitive(spoofLinkHost(Principal,ImpersonatedHost,FooledHost,SpoofingHost,Consequence)).
+primitive(spoofE2EHost(Principal,ImpersonatedHost,FooledHost,SpoofingHost,Prot,Port,Consequence)).
+primitive(dos(Principal,Host)).
 
 meta(cvss(_vulID, _ac)).
 
@@ -106,7 +117,7 @@ derived(relay(MITMHost,SrcHost,DstHost,Prot,Port)).
 derived(crackAPEncKey(Principal,AP)).
 derived(isAuthenticated(Principal,AttackerHost,AP)).
 derived(accessDataFlow(Principal,FlowName,read)).
-derived(located(Dev,DstZone,Type)).
+/*derived(located(Dev,DstZone,Type)).*/
 derived(accessLinkFlow(Principal, Host, AP, Protocol, read)).
 derived(crackAPEncKey(Principal, Host, AP)).
 derived(accessDataFlow(Principal, FlowName, read)).
@@ -148,7 +159,7 @@ meta(advances(_, _)).
 :- table crackAPEncKey/2.
 :- table isAuthenticated/3.
 :- table accessDataFlow/3.
-:- table located/3.
+/*:- table located/3.*/
 :- table accessLinkFlow/5.
 :- table crackAPEncKey/3.
 :- table accessDataFlow/3.
@@ -526,6 +537,15 @@ interaction_rule(
   rule_desc('Access to a host through an end-to-end protocol',
   1.0)).
 
+/* EXTENSION ADDED BY GIACOMO GORI AND LORENZO RINIERI TO MAKE THE PREDICATE WORK */
+interaction_rule(
+  (netAccess(Principal,SrcHost,DstHost,Prot,Port):-
+    located(DstHost, SubNetwork, Type),
+    hacl(Network, DstHost, Prot, Port),
+    isGateway(Gateway,SubNetwork),
+    attackerLocated(Network)),
+  rule_desc('Access to a host through an end-to-end protocol',
+  1.0)).
 
 interaction_rule(
   (accessDataFlow(Principal,FlowName,view):-
@@ -656,9 +676,9 @@ interaction_rule(
 
 interaction_rule(
   (dos(Principal,Host):-
-    localAccess(Principal,Host,User),
-    localService(Host,Prog,User),
-    vulHost(Host,VulID,Prog,localExploit,dos),
+    localAccess(Principal,Host,User), 
+    localService(Host,Prog,User), /* DA CAMBIARE: da inserire dentro il vulHostDos*/
+    vulHostDos(Host), 
     malicious(Principal)),
   rule_desc('Host based DoS',
   1.0)).
@@ -667,7 +687,7 @@ interaction_rule(
   (dos(Principal,DstHost):-
     networkService(DstHost,Prog,Prot,Port,NetworkServiceUser),
     aclH(DstHost,NetworkServiceUser,SrcHost,DstHost,Prot,Port),
-    vulHost(DstHost,VulID,Prog,remoteExploit,dos),
+    vulHostDos(DstHost),
     netAccess(Principal,SrcHost,DstHost,Prot,Port),
     malicious(Principal)),
   rule_desc('Network based DoS',
@@ -743,13 +763,13 @@ interaction_rule(
   1.0)).
 
 
-interaction_rule(
+/*interaction_rule(
   (located(Dev,DstZone,Type):-
     l2Connection(Dev,AP,WirelessRange,Prot,wireless),
     isAP(AP,WirelessRange,DstZone,Prot,secured),
     located(_,DstZone,Type)),
   rule_desc('New located interaction rule',
-  1.0)).
+  1.0)).*/
 
 interaction_rule(
   (accessLinkFlow(Principal, Host, AP, Protocol, read):-
