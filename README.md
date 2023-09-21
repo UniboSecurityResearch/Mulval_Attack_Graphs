@@ -14,7 +14,7 @@ When the container has started, create a file called **input.P** in the current 
 
 To produce the attack graph run the following command:
 ```
-graph_gen.sh input.P -v --rulefile ./rules.P
+graph_gen.sh input.P -v --rulefile ./ruleset.P
 ```
 
 ## Dockerfile.
